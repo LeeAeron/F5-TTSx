@@ -57,7 +57,7 @@ This project provided with only *.bat installer/re-installer/starter file, that 
     - This installer is intended for those running Windows 10 or higher. 
     - Application functionality for systems running Windows 7 or lower is not guaranteed.
 
-- Download the F5-TTSx .bat installer for Windows in [Releases](https://github.com/LeeAeron/F5TTSx/releases).
+- Download the F5-TTSx .bat installer for Windows in [Releases](https://github.com/LeeAeron/F5-TTSx/releases).
 - Place the BAT-file in any folder in the root of any partition with a short Latin name without spaces or special characters and run it.
 - Select INSTALL (2) entry .bat file will download, unpack and configure all needed environment.
 - After installing, select START (1). .bat will launch Browser, and loads necessary files, models, also there will be loaded Official F5-TTS EN/ZH model.
