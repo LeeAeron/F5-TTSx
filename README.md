@@ -15,7 +15,7 @@
 - Enhanced UI settings with useful features and stability improvements  
 
 
-### ✅ Supported Models
+## ✅ Supported Models
 
 - All official F5-TTS models, including fine-tuned customs (by suppport them with Custom profile)
 - Qwen 2.5/3B Instruct and Microsoft Phi 4 mini instruct for Ai voice chat
@@ -42,8 +42,9 @@
 - F5TTS_RUv4 model is fine-tuned russian model v4 (winter) by Misha24-10 used from own repository (https://huggingface.co/LeeAeron/F5TTSx/models/F5TTS_RU/v4)
 
 
-## ⚙️ NVIDIA GPU Support
+## ⚙️ Installation
 F5-TTSx uses Puthon 3.11 and Torch 2.8.0 Cuda 12.8.
+
 F5-TTSx supports GTX and RTX cards, including GTX10xx-16xx and RTX 20xx–50xx.
 
 
@@ -62,7 +63,7 @@ This project provided with only *.bat installer/re-installer/starter file, that 
 - After installing, select START (1). .bat will launch Browser, and loads necessary files, models, also there will be loaded Official F5-TTS EN/ZH model.
 
 
-### ⚙️ New Features:
+## ⚙️ New Features:
 - downloadable optional voice pack
 - support to change Whisper voice-to-text model, depending your VRAM level
 - support for wav/mp3/aac/m4a/m4b/ogg/flac/opus input audio files
