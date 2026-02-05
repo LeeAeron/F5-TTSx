@@ -1,5 +1,5 @@
 # 🚀 F5-TTSx: A Fairytaler that Fakes Fluent and Faithful Speech with Flow Matching eXtended
-<img src="https://raw.githubusercontent.com/LeeAeron/F5TTSx/img/F5TTSx.png?raw=true" />
+![F5-TTSx](img/F5TTSx.png)
 
 [![Release](https://img.shields.io/github/release/LeeAeron/F5-TTSx.svg)](https://github.com/LeeAeron/F5-TTSx/releases/latest)
 
