@@ -670,7 +670,7 @@ with gr.Blocks() as app_tts:
             label="Cross-Fade Duration (seconds)",
             minimum=0.0,
             maximum=1.0,
-            value=0.15,
+            value=0.0,
             step=0.01,
             info="Set the duration of the cross-fade between audio clips.",
         )
@@ -686,7 +686,7 @@ with gr.Blocks() as app_tts:
             label="CFG Strength",
             minimum=0.1,
             maximum=5.0,
-            value=2.0,
+            value=1.0,
             step=0.1,
             info="Classifier-Free Guidance",
         )

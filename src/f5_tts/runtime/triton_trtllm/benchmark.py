@@ -377,7 +377,7 @@ def main():
                         text=text_pad_seq,
                         duration=total_mel_lens,
                         steps=32,
-                        cfg_strength=2.0,
+                        cfg_strength=1.0,
                         sway_sampling_coef=-1,
                     )
 
@@ -418,7 +418,7 @@ def main():
                     duration=total_mel_lens,
                     lens=ref_mel_lens,
                     steps=32,
-                    cfg_strength=2.0,
+                    cfg_strength=1.0,
                     sway_sampling_coef=-1,
                 )
                 cost_time = time.time() - start_time

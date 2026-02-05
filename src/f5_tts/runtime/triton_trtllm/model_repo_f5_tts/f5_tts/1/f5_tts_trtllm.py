@@ -307,7 +307,7 @@ class F5TTS(object):
     ):
         if use_perf:
             torch.cuda.nvtx.range_push("flow matching")
-        cfg_strength = 2.0
+        cfg_strength = 1.0
         batch_size = noise.shape[0]
         half_batch = batch_size // 2
         noise_half = noise[:half_batch]  # Store the initial half of noise
