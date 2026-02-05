@@ -34,6 +34,10 @@ python3 client_grpc.py \
 
 import argparse
 import asyncio
+
+if sys.platform.startswith("win"):
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 import json
 import os
 import time
