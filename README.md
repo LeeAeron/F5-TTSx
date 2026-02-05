@@ -40,7 +40,6 @@
 - F5-TTS_v1 model is an original F5-TTS model used from own repository (https://huggingface.co/LeeAeron/F5TTSx/models/F5TTS_v1_Base)
 - F5TTS_RUv2 model is fine-tuned russian model v2 by Misha24-10 used from own repository (https://huggingface.co/LeeAeron/F5TTSx/models/F5TTS_RU/v2)
 - F5TTS_RUv4 model is fine-tuned russian model v4 (winter) by Misha24-10 used from own repository (https://huggingface.co/LeeAeron/F5TTSx/models/F5TTS_RU/v4)
-- model 
 
 
 ## ⚙️ NVIDIA GPU Support
