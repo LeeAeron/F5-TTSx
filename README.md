@@ -43,7 +43,7 @@
 
 
 ## ⚙️ Installation
-F5-TTSx uses Puthon 3.11 and Torch 2.8.0 Cuda 12.8.
+F5-TTSx uses Python 3.11 and Torch 2.8.0 Cuda 12.8.
 
 F5-TTSx supports GTX and RTX cards, including GTX10xx-16xx and RTX 20xx–50xx.
 
@@ -88,4 +88,5 @@ This project provided with only *.bat installer/re-installer/starter file, that 
 ## 📝 License
 
 The **F5-TTSx** code is released under MIT License. 
+
 The pre-trained models are licensed under the CC-BY-NC license due to the training data Emilia, which is an in-the-wild dataset. Sorry for any inconvenience this may cause.
