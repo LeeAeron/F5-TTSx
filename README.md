@@ -8,7 +8,7 @@
 **F5-TTSx** is a custom build of the F5-TTS voice synthezer, designed to get more fliud settings for synthezing voice - especially on systems with limited VRAM.
 
 
-## 🔧 Key Differences from Official F5-TTSx
+## 🔧 Key Differences from Official F5-TTS
 
 - Optimized for all systems with nVidia GPUs
 - Main `.bat` menu with option to install/reinstall project
