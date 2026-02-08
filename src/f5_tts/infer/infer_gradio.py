@@ -78,10 +78,15 @@ from f5_tts.infer.utils_infer import (
 from f5_tts.model import DiT, UNetT
 
 
+import os
+import requests
+import time
+
 def safe_path(local_path: str, remote_url: str) -> str:
     """
     Checks for the existence of a local file.
     If it doesn't exist, it downloads remote_url to local_path and returns the path.
+    Shows progress, elapsed time, and estimated remaining time.
     """
     if os.path.exists(local_path):
         return local_path
@@ -91,9 +96,30 @@ def safe_path(local_path: str, remote_url: str) -> str:
     print(f"[INFO] Downloading {remote_url} -> {local_path}")
     r = requests.get(remote_url, stream=True)
     r.raise_for_status()
+
+    total_size = int(r.headers.get("Content-Length", 0))
+    downloaded = 0
+    start = time.time()
+
     with open(local_path, "wb") as f:
         for chunk in r.iter_content(chunk_size=8192):
-            f.write(chunk)
+            if chunk:
+                f.write(chunk)
+                downloaded += len(chunk)
+
+                if total_size > 0:
+                    elapsed = time.time() - start
+                    speed = downloaded / elapsed  # bytes per second
+                    remaining = (total_size - downloaded) / speed if speed > 0 else 0
+                    percent = downloaded / total_size * 100
+                    print(
+                        f"\r[INFO] {percent:.2f}% | "
+                        f"Elapsed: {elapsed:.1f}s | "
+                        f"Remaining: {remaining:.1f}s",
+                        end=""
+                    )
+
+    print(f"\n[INFO] Download complete: {local_path}")
 
     return local_path
 
@@ -392,7 +418,16 @@ def infer(
             E2TTS_ema_model = load_e2tts()
         ema_model = E2TTS_ema_model
 
-    elif model_type in ["Custom", "F5TTS_RUv2", "F5TTS_RUv4"]:
+    elif model_type in [
+        "Custom",
+        "Misha24-10_v2",
+        "Misha24-10_v4",
+        "ESpeech-TTS-1_podcaster",
+        "ESpeech-TTS-1_RL-V1",
+        "ESpeech-TTS-1_RL-V2",
+        "ESpeech-TTS-1_SFT-95K",
+        "ESpeech-TTS-1_SFT-256K"
+    ]:
         assert not USING_SPACES, "Only official checkpoints allowed in Spaces."
         global custom_ema_model, pre_custom_path
         ckpt, vocab, cfg = model[1], model[2], model[3]
@@ -1721,6 +1756,7 @@ F5-TTXx official [Git](https://github.com/LeeAeron/F5-TTSx)
 * [mrfakename](https://github.com/fakerybakery) — original [online demo](https://huggingface.co/spaces/mrfakename/E2-F5-TTS)
 * [RootingInLoad](https://github.com/RootingInLoad) — chunk generation & podcast app exploration
 * [jpgallegoar](https://github.com/jpgallegoar) — multiple speech-type generation & voice chat
+* [Ebany Speech](https://huggingface.co/ESpeech) - additional russian language TTS models
 """
 )
 
@@ -1759,7 +1795,7 @@ f"""
                 gr.update()
             )
 
-        elif new_choice == "F5TTS_RUv2":
+        elif new_choice == "Misha24-10_v2":
             ckpt = safe_path(
                 "models/F5TTS_RU/v2/Misha24-10_v2.safetensors",
                 "https://huggingface.co/datasets/LeeAeron/F5TTSx/resolve/main/models/F5TTS_RU/v2/Misha24-10_v2.safetensors"
@@ -1768,12 +1804,12 @@ f"""
                 "models/F5TTS_RU/v2/vocab.txt",
                 "https://huggingface.co/datasets/LeeAeron/F5TTSx/resolve/main/models/F5TTS_RU/v2/vocab.txt"
             )
-            tts_model_choice = ("F5TTS_RUv2", ckpt, vocab,
+            tts_model_choice = ("Misha24-10_v2", ckpt, vocab,
                                 json.dumps(dict(dim=1024, depth=22, heads=16, ff_mult=2,
                                                 text_dim=512, conv_layers=4)))
             return gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(value=True)
 
-        elif new_choice == "F5TTS_RUv4":
+        elif new_choice == "Misha24-10_v4":
             ckpt = safe_path(
                 "models/F5TTS_RU/v4_winter/Misha24-10_v4_winter.safetensors",
                 "https://huggingface.co/datasets/LeeAeron/F5TTSx/resolve/main/models/F5TTS_RU/v4_winter/Misha24-10_v4_winter.safetensors"
@@ -1782,7 +1818,77 @@ f"""
                 "models/F5TTS_RU/v4_winter/vocab.txt",
                 "https://huggingface.co/datasets/LeeAeron/F5TTSx/resolve/main/models/F5TTS_RU/v4_winter/vocab.txt"
             )
-            tts_model_choice = ("F5TTS_RUv4", ckpt, vocab,
+            tts_model_choice = ("Misha24-10_v4", ckpt, vocab,
+                                json.dumps(dict(dim=1024, depth=22, heads=16, ff_mult=2,
+                                                text_dim=512, conv_layers=4)))
+            return gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(value=True)
+
+        elif new_choice == "ESpeech-TTS-1_podcaster":
+            ckpt = safe_path(
+                "models/ESpeech/ESpeech-TTS-1_podcaster/espeech_tts_podcaster.pt",
+                "https://huggingface.co/datasets/LeeAeron/F5TTSx/resolve/main/models/ESpeech-TTS-1_podcaster/espeech_tts_podcaster.pt"
+            )
+            vocab = safe_path(
+                "models/ESpeech/ESpeech-TTS-1_podcaster/vocab.txt",
+                "https://huggingface.co/datasets/LeeAeron/F5TTSx/resolve/main/models/ESpeech-TTS-1_podcaster/vocab.txt"
+            )
+            tts_model_choice = ("ESpeech-TTS-1_podcaster", ckpt, vocab,
+                                json.dumps(dict(dim=1024, depth=22, heads=16, ff_mult=2,
+                                                text_dim=512, conv_layers=4)))
+            return gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(value=True)
+
+        elif new_choice == "ESpeech-TTS-1_RL-V1":
+            ckpt = safe_path(
+                "models/ESpeech/ESpeech-TTS-1_RL-V1/espeech_tts_rlv1.pt",
+                "https://huggingface.co/datasets/LeeAeron/F5TTSx/resolve/main/models/ESpeech-TTS-1_RL-V1/espeech_tts_rlv1.pt"
+            )
+            vocab = safe_path(
+                "models/ESpeech/ESpeech-TTS-1_RL-V1/vocab.txt",
+                "https://huggingface.co/datasets/LeeAeron/F5TTSx/resolve/main/models/ESpeech-TTS-1_RL-V1/vocab.txt"
+            )
+            tts_model_choice = ("ESpeech-TTS-1_RL-V1", ckpt, vocab,
+                                json.dumps(dict(dim=1024, depth=22, heads=16, ff_mult=2,
+                                                text_dim=512, conv_layers=4)))
+            return gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(value=True)
+
+        elif new_choice == "ESpeech-TTS-1_RL-V2":
+            ckpt = safe_path(
+                "models/ESpeech/ESpeech-TTS-1_RL-V2/espeech_tts_rlv2.pt",
+                "https://huggingface.co/datasets/LeeAeron/F5TTSx/resolve/main/models/ESpeech-TTS-1_RL-V2/espeech_tts_rlv2.pt"
+            )
+            vocab = safe_path(
+                "models/ESpeech/ESpeech-TTS-1_RL-V2/vocab.txt",
+                "https://huggingface.co/datasets/LeeAeron/F5TTSx/resolve/main/models/ESpeech-TTS-1_RL-V2/vocab.txt"
+            )
+            tts_model_choice = ("ESpeech-TTS-1_RL-V2", ckpt, vocab,
+                                json.dumps(dict(dim=1024, depth=22, heads=16, ff_mult=2,
+                                                text_dim=512, conv_layers=4)))
+            return gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(value=True)
+
+        elif new_choice == "ESpeech-TTS-1_SFT-95K":
+            ckpt = safe_path(
+                "models/ESpeech/ESpeech-TTS-1_SFT-95K/espeech_tts_95k.pt",
+                "https://huggingface.co/datasets/LeeAeron/F5TTSx/resolve/main/models/ESpeech-TTS-1_SFT-95K/espeech_tts_95k.pt"
+            )
+            vocab = safe_path(
+                "models/ESpeech/ESpeech-TTS-1_SFT-95K/vocab.txt",
+                "https://huggingface.co/datasets/LeeAeron/F5TTSx/resolve/main/models/ESpeech-TTS-1_SFT-95K/vocab.txt"
+            )
+            tts_model_choice = ("ESpeech-TTS-1_SFT-95K", ckpt, vocab,
+                                json.dumps(dict(dim=1024, depth=22, heads=16, ff_mult=2,
+                                                text_dim=512, conv_layers=4)))
+            return gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(value=True)
+
+        elif new_choice == "ESpeech-TTS-1_SFT-256K":
+            ckpt = safe_path(
+                "models/ESpeech/ESpeech-TTS-1_SFT-256K/espeech_tts_256k.pt",
+                "https://huggingface.co/datasets/LeeAeron/F5TTSx/resolve/main/models/ESpeech-TTS-1_SFT-256K/espeech_tts_256k.pt"
+            )
+            vocab = safe_path(
+                "models/ESpeech/ESpeech-TTS-1_SFT-256K/vocab.txt",
+                "https://huggingface.co/datasets/LeeAeron/F5TTSx/resolve/main/models/ESpeech-TTS-1_SFT-256K/vocab.txt"
+            )
+            tts_model_choice = ("ESpeech-TTS-1_SFT-256K", ckpt, vocab,
                                 json.dumps(dict(dim=1024, depth=22, heads=16, ff_mult=2,
                                                 text_dim=512, conv_layers=4)))
             return gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(value=True)
@@ -1813,11 +1919,22 @@ f"""
         initialize_asr_pipeline,
     )
 
+
     with gr.Row():
         choose_tts_model = gr.Radio(
-            choices=["F5-TTS_v1", "F5TTS_RUv2", "F5TTS_RUv4", "Custom"],
+            choices=[
+                "F5-TTS_v1",
+                "Misha24-10_v2",
+                "Misha24-10_v4",
+                "ESpeech-TTS-1_podcaster",
+                "ESpeech-TTS-1_RL-V1",
+                "ESpeech-TTS-1_RL-V2",
+                "ESpeech-TTS-1_SFT-95K",
+                "ESpeech-TTS-1_SFT-256K",
+                "Custom"
+            ],
             label="Choose TTS Model",
-            value="F5-TTS_v1", # default native
+            value="F5-TTS_v1",  # default native
         )
 
         custom_ckpt_path = gr.Dropdown(

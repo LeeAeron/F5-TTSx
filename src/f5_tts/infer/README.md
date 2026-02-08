@@ -33,13 +33,19 @@
 - [Latvian](https://huggingface.co/RaivisDejus/F5-TTS-Latvian)
 - [Russian](https://huggingface.co/hotstone228/F5-TTS-Russian)
 - [Russian](https://huggingface.co/Misha24-10/F5-TTS_RUSSIAN) (included in project)
+- [Russian](https://huggingface.co/ESpeech/ESpeech-TTS-1_SFT-95K) (included in project)
+- [Russian](https://huggingface.co/ESpeech/ESpeech-TTS-1_SFT-256K) (included in project)
+- [Russian](https://huggingface.co/ESpeech/ESpeech-TTS-1_podcaster) (included in project)
+- [Russian](https://huggingface.co/ESpeech/ESpeech-TTS-1_RL-V1) (included in project)
+- [Russian](https://huggingface.co/ESpeech/ESpeech-TTS-1_RL-V2) (included in project)
 - [Spanish](https://huggingface.co/jpgallegoar/F5-Spanish)
 
 
 ### 🔥 Very important
 - F5-TTS_v1 model is an original F5-TTS model used from own repository (https://huggingface.co/LeeAeron/F5TTSx/models/F5TTS_v1_Base)
-- F5TTS_RUv2 model is fine-tuned russian model v2 by Misha24-10 used from own repository (https://huggingface.co/LeeAeron/F5TTSx/models/F5TTS_RU/v2)
-- F5TTS_RUv4 model is fine-tuned russian model v4 (winter) by Misha24-10 used from own repository (https://huggingface.co/LeeAeron/F5TTSx/models/F5TTS_RU/v4)
+- Misha24-10_v2 model is fine-tuned russian model v2 by Misha24-10 used from own repository (https://huggingface.co/LeeAeron/F5TTSx/models/F5TTS_RU/v2)
+- Misha24-10_v4 model is fine-tuned russian model v4 (winter) by Misha24-10 used from own repository (https://huggingface.co/LeeAeron/F5TTSx/models/F5TTS_RU/v4)
+- ESpeech-TTS-1_podcaster, ESpeech-TTS-1_RL-V1, ESpeech-TTS-1_RL-V2, ESpeech-TTS-1_SFT-95K, ESpeech-TTS-1_SFT-256K are models by ESpeech TTS used from my own repositories.
 
 
 ## ⚙️ Installation
@@ -64,6 +70,7 @@ This project provided with only *.bat installer/re-installer/starter file, that 
 
 
 ## ⚙️ New Features:
+- added additional 7 models for usage, deleted E2-TTS model.
 - downloadable optional voice pack
 - support to change Whisper voice-to-text model, depending your VRAM level
 - support for wav/mp3/aac/m4a/m4b/ogg/flac/opus input audio files
@@ -83,6 +90,7 @@ This project provided with only *.bat installer/re-installer/starter file, that 
 * [mrfakename](https://github.com/fakerybakery) — original [online demo](https://huggingface.co/spaces/mrfakename/E2-F5-TTS)
 * [RootingInLoad](https://github.com/RootingInLoad) — chunk generation & podcast app exploration
 * [jpgallegoar](https://github.com/jpgallegoar) — multiple speech-type generation & voice chat
+* [Ebany Speech](https://huggingface.co/ESpeech) - additional russian language TTS models
 
 
 ## 📝 License
