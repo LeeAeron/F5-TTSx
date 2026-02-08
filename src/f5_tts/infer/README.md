@@ -8,7 +8,7 @@
 **F5-TTSx** is a custom build of the F5-TTS voice synthezer, designed to get more fliud settings for synthezing voice - especially on systems with limited VRAM.
 
 
-## 🔧 Key Differences from Official F5-TTSx
+## 🔧 Key Differences from Official F5-TTS
 
 - Optimized for all systems with nVidia GPUs
 - Main `.bat` menu with option to install/reinstall project
@@ -56,7 +56,7 @@ F5-TTSx supports GTX and RTX cards, including GTX10xx-16xx and RTX 20xx–50xx.
 
 ### 🖥️ Windows Installation
 
-This project provided with only *.bat installer/re-installer/starter file, that will download and install all components and build fully portable F5-TTSx.
+This project provided with only *.bat installer/re-installer/starter/updater file, that will download and install all components and build fully portable F5-TTSx.
 
 ➤ Please Note:
     - I'm supporting only nVidia GTX10xx-16xx and RTX20xx-50xx GPUs.

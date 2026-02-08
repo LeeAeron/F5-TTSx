@@ -56,7 +56,7 @@ F5-TTSx supports GTX and RTX cards, including GTX10xx-16xx and RTX 20xx–50xx.
 
 ### 🖥️ Windows Installation
 
-This project provided with only *.bat installer/re-installer/starter file, that will download and install all components and build fully portable F5-TTSx.
+This project provided with only *.bat installer/re-installer/starter/updater file, that will download and install all components and build fully portable F5-TTSx.
 
 ➤ Please Note:
     - I'm supporting only nVidia GTX10xx-16xx and RTX20xx-50xx GPUs.
