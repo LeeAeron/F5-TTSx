@@ -34,6 +34,24 @@ from f5_tts.model import CFM
 from f5_tts.model.utils import convert_char_to_pinyin, get_tokenizer
 
 
+import torchaudio
+
+def stretch_wave(waveform, sr, speed):
+    """
+    waveform: torch.Tensor [channels, samples]
+    sr: int, initial sample rate
+    speed: float, speed factor (e.g. 1.3 = faster, 0.8 = slower)
+    """
+    new_sr = int(sr * speed)
+    resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=new_sr)
+    stretched = resampler(waveform)
+
+    resampler_back = torchaudio.transforms.Resample(orig_freq=new_sr, new_freq=sr)
+    stretched = resampler_back(stretched)
+
+    return stretched
+
+
 _ref_audio_cache = {}
 _ref_text_cache = {}
 
@@ -525,7 +543,7 @@ def infer_batch_process(
         else:
             ref_text_len = len(ref_text.encode("utf-8"))
             gen_text_len = len(gen_text.encode("utf-8"))
-            duration = ref_audio_len + int(ref_audio_len / ref_text_len * gen_text_len / local_speed)
+            duration = ref_audio_len + int(ref_audio_len / ref_text_len * gen_text_len)
 
         # inference
         with torch.inference_mode():
@@ -620,10 +638,12 @@ def infer_batch_process(
                         [prev_wave[:-cross_fade_samples], cross_faded_overlap, next_wave[cross_fade_samples:]]
                     )
 
-                    final_wave = new_wave
-
             # Create a combined spectrogram
             combined_spectrogram = np.concatenate(spectrograms, axis=1)
+
+            waveform_tensor = torch.tensor(final_wave).unsqueeze(0)  # [1, samples]
+            stretched_tensor = stretch_wave(waveform_tensor, target_sample_rate, speed)
+            final_wave = stretched_tensor.squeeze().cpu().numpy()
 
             yield final_wave, target_sample_rate, combined_spectrogram
 
