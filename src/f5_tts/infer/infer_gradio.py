@@ -3,6 +3,11 @@
 import asyncio
 import sys
 import logging
+import threading
+import time
+import webbrowser
+import uvicorn
+
 
 if sys.platform.startswith("win"):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -2052,7 +2057,7 @@ If you're having issues, try converting your reference audio to WAV or MP3, clip
     "--inbrowser",
     "-i",
     is_flag=True,
-    default=False,
+    default=True,
     help="Automatically launch the interface in the default web browser",
 )
 def main(port, host, share, api, root_path, inbrowser):
