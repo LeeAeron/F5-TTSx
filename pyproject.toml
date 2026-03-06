@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "f5-tts"
-version = "1.1.19"
+version = "1.1.19.1"
 description = "F5-TTSx: A Fairytaler that Fakes Fluent and Faithful Speech with Flow Matching"
 readme = "README.md"
 license = {text = "MIT License"}
@@ -37,7 +37,7 @@ dependencies = [
     "torchcodec",
     "torchdiffeq",
     "tqdm>=4.65.0",
-    "transformers==4.49.0",
+    "transformers==4.55.2",
     "transformers_stream_generator",
     "unidecode",
     "vocos",
