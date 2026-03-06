@@ -45,7 +45,9 @@ dependencies = [
     "x_transformers>=1.31.14",
     "openai-whisper",
     "ruaccent",
-    "chardet",
+    "requests==2.32.5",
+    "chardet==5.2.0",    
+    "urllib3==2.6.3",
 ]
 
 [project.urls]
