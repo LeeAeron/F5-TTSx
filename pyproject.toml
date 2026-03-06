@@ -31,7 +31,6 @@ dependencies = [
     "rjieba",
     "safetensors",
     "soundfile",
-    "cache-dit==1.2.2",
     "tomli",
     "torch>=2.0.0",
     "torchaudio>=2.0.0",
