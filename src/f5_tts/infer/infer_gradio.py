@@ -114,7 +114,7 @@ def safe_path(local_path: str, remote_url: str) -> str:
 
                 if total_size > 0:
                     elapsed = time.time() - start
-                    speed = downloaded / elapsed  # bytes per second
+                    speed = downloaded / elapsed if elapsed > 0 else 0
                     remaining = (total_size - downloaded) / speed if speed > 0 else 0
                     percent = downloaded / total_size * 100
                     print(
