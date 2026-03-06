@@ -30,7 +30,7 @@ dependencies = [
     "pypinyin==0.55.0",
     "rjieba==0.2.0",
     "safetensors==0.7.0",
-    "soundfile==0.31.1",
+    "soundfile",
     "tomli==2.4.0",
     "torch>=2.0.0",
     "torchaudio>=2.0.0",
