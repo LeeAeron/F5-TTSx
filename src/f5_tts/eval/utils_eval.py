@@ -108,14 +108,14 @@ def get_inference_prompt(
 
     for utt, prompt_text, prompt_wav, gt_text, gt_wav in tqdm(metainfo, desc="Processing prompts..."):
         # Audio
-        ref_audio, ref_sr = torchaudio.load(prompt_wav)
+        ref_audio, ref_sr = load_audio(prompt_wav, target_sample_rate=target_sample_rate)
+        if not isinstance(ref_audio, torch.Tensor):
+            ref_audio = torch.from_numpy(ref_audio).float()
+
         ref_rms = torch.sqrt(torch.mean(torch.square(ref_audio)))
         if ref_rms < target_rms:
             ref_audio = ref_audio * target_rms / ref_rms
-        assert ref_audio.shape[-1] > 5000, f"Empty prompt wav: {prompt_wav}, or torchaudio backend issue."
-        if ref_sr != target_sample_rate:
-            resampler = torchaudio.transforms.Resample(ref_sr, target_sample_rate)
-            ref_audio = resampler(ref_audio)
+        assert ref_audio.shape[-1] > 5000, f"Empty prompt wav: {prompt_wav}, or audio backend issue."
 
         # Text
         if len(prompt_text[-1].encode("utf-8")) == 1:
@@ -134,14 +134,10 @@ def get_inference_prompt(
         ref_mel_len = ref_mel.shape[-1]
 
         if use_truth_duration:
-            gt_audio, gt_sr = torchaudio.load(gt_wav)
-            if gt_sr != target_sample_rate:
-                resampler = torchaudio.transforms.Resample(gt_sr, target_sample_rate)
-                gt_audio = resampler(gt_audio)
+            gt_audio, gt_sr = load_audio(gt_wav, target_sample_rate=target_sample_rate)
+            if not isinstance(gt_audio, torch.Tensor):
+                gt_audio = torch.from_numpy(gt_audio).float()
             total_mel_len = ref_mel_len + int(gt_audio.shape[-1] / hop_length / speed)
-
-            # # test vocoder resynthesis
-            # ref_audio = gt_audio
         else:
             ref_text_len = len(prompt_text.encode("utf-8"))
             gen_text_len = len(gt_text.encode("utf-8"))
@@ -150,7 +146,8 @@ def get_inference_prompt(
         # deal with batch
         assert infer_batch_size > 0, "infer_batch_size should be greater than 0."
         assert min_tokens <= total_mel_len <= max_tokens, (
-            f"Audio {utt} has duration {total_mel_len * hop_length // target_sample_rate}s out of range [{min_secs}, {max_secs}]."
+            f"Audio {utt} has duration {total_mel_len * hop_length // target_sample_rate}s "
+            f"out of range [{min_secs}, {max_secs}]."
         )
         bucket_i = math.floor((total_mel_len - min_tokens) / (max_tokens - min_tokens + 1) * num_buckets)
 
@@ -164,7 +161,6 @@ def get_inference_prompt(
         batch_accum[bucket_i] += total_mel_len
 
         if batch_accum[bucket_i] >= infer_batch_size:
-            # print(f"\n{len(ref_mels[bucket_i][0][0])}\n{ref_mel_lens[bucket_i]}\n{total_mel_lens[bucket_i]}")
             prompts_all.append(
                 (
                     utts[bucket_i],
@@ -198,7 +194,6 @@ def get_inference_prompt(
                     final_text_list[bucket_i],
                 )
             )
-    # not only leave easy work for last workers
     random.seed(666)
     random.shuffle(prompts_all)
 
@@ -328,7 +323,7 @@ def run_asr_wer(args):
 
     for gen_wav, prompt_wav, truth in tqdm(test_set):
         if lang == "zh":
-            res = asr_model.generate(input=gen_wav, batch_size_s=300, disable_pbar=True)
+            res = asr_model.generate(input_features=gen_wav, batch_size_s=300, disable_pbar=True)
             hypo = res[0]["text"]
             hypo = zhconv.convert(hypo, "zh-cn")
         elif lang == "en":
@@ -377,6 +372,11 @@ def run_asr_wer(args):
 # SIM Evaluation
 
 
+from pathlib import Path
+import torch
+import torch.nn.functional as F
+from tqdm import tqdm
+
 def run_sim(args):
     rank, test_set, ckpt_dir = args
     device = f"cuda:{rank}"
@@ -385,15 +385,20 @@ def run_sim(args):
     state_dict = torch.load(ckpt_dir, weights_only=True, map_location=lambda storage, loc: storage)
     model.load_state_dict(state_dict["model"], strict=False)
 
-    use_gpu = True if torch.cuda.is_available() else False
+    use_gpu = torch.cuda.is_available()
     if use_gpu:
         model = model.cuda(device)
     model.eval()
 
     sim_results = []
     for gen_wav, prompt_wav, truth in tqdm(test_set):
-        wav1, sr1 = torchaudio.load(gen_wav)
-        wav2, sr2 = torchaudio.load(prompt_wav)
+        wav1, sr1 = load_audio(gen_wav, target_sample_rate=16000)
+        wav2, sr2 = load_audio(prompt_wav, target_sample_rate=16000)
+
+        if not isinstance(wav1, torch.Tensor):
+            wav1 = torch.from_numpy(wav1).float()
+        if not isinstance(wav2, torch.Tensor):
+            wav2 = torch.from_numpy(wav2).float()
 
         if use_gpu:
             wav1 = wav1.cuda(device)
@@ -415,7 +420,6 @@ def run_sim(args):
             emb2 = model(wav2)
 
         sim = F.cosine_similarity(emb1, emb2)[0].item()
-        # print(f"VSim score between two audios: {sim:.4f} (-1.0, 1.0).")
         sim_results.append(
             {
                 "wav": Path(gen_wav).stem,

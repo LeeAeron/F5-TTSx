@@ -106,17 +106,31 @@ def prepare_request(
     return data
 
 
+import torch
+from torchcodec.decoders import AudioDecoder
+from scipy.signal import resample
+
 def load_audio(wav_path, target_sample_rate=24000):
     assert target_sample_rate == 24000, "hard coding in server"
+
     if isinstance(wav_path, dict):
         waveform = wav_path["array"]
         sample_rate = wav_path["sampling_rate"]
     else:
-        waveform, sample_rate = sf.read(wav_path)
-    if sample_rate != target_sample_rate:
-        from scipy.signal import resample
+        decoder = AudioDecoder(wav_path)
+        waveform = decoder.decode()
+        sample_rate = decoder.sample_rate
 
-        waveform = resample(waveform, int(len(waveform) * (target_sample_rate / sample_rate)))
+    # Convert to numpy for compatibility with your code
+    if isinstance(waveform, torch.Tensor):
+        waveform = waveform.numpy()
+
+    if sample_rate != target_sample_rate:
+        waveform = resample(
+            waveform,
+            int(len(waveform) * (target_sample_rate / sample_rate))
+        )
+
     return waveform, target_sample_rate
 
 

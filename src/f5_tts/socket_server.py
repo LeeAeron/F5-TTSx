@@ -109,15 +109,23 @@ class TTSStreamingProcessor:
     def load_vocoder_model(self):
         return load_vocoder(vocoder_name=self.mel_spec_type, is_local=False, local_path=None, device=self.device)
 
+
     def update_reference(self, ref_audio, ref_text):
         self.ref_audio, self.ref_text = preprocess_ref_audio_text(ref_audio, ref_text)
-        self.audio, self.sr = torchaudio.load(self.ref_audio)
+
+        audio, sr = load_audio(self.ref_audio, target_sample_rate=24000)
+
+        if not isinstance(audio, torch.Tensor):
+            audio = torch.from_numpy(audio).float()
+
+        self.audio, self.sr = audio, sr
 
         ref_audio_duration = self.audio.shape[-1] / self.sr
         ref_text_byte_len = len(self.ref_text.encode("utf-8"))
-        self.max_chars = int(ref_text_byte_len / (ref_audio_duration) * (25 - ref_audio_duration))
-        self.few_chars = int(ref_text_byte_len / (ref_audio_duration) * (25 - ref_audio_duration) / 2)
-        self.min_chars = int(ref_text_byte_len / (ref_audio_duration) * (25 - ref_audio_duration) / 4)
+
+        self.max_chars = int(ref_text_byte_len / ref_audio_duration * (25 - ref_audio_duration))
+        self.few_chars = int(ref_text_byte_len / ref_audio_duration * (25 - ref_audio_duration) / 2)
+        self.min_chars = int(ref_text_byte_len / ref_audio_duration * (25 - ref_audio_duration) / 4)
 
     def _warm_up(self):
         logger.info("Warming up the model...")

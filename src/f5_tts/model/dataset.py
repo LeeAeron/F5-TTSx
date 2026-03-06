@@ -141,13 +141,14 @@ class CustomDataset(Dataset):
         if self.preprocessed_mel:
             mel_spec = torch.tensor(row["mel_spec"])
         else:
-            audio, source_sample_rate = torchaudio.load(audio_path)
+            audio, source_sample_rate = load_audio(audio_path, target_sample_rate=self.target_sample_rate)
 
-            # make sure mono input
+            if not isinstance(audio, torch.Tensor):
+                audio = torch.from_numpy(audio).float()
+
             if audio.shape[0] > 1:
                 audio = torch.mean(audio, dim=0, keepdim=True)
 
-            # resample if necessary
             if source_sample_rate != self.target_sample_rate:
                 resampler = torchaudio.transforms.Resample(source_sample_rate, self.target_sample_rate)
                 audio = resampler(audio)

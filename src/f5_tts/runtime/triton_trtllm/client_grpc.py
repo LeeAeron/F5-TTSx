@@ -228,17 +228,63 @@ def load_audio(wav_path, target_sample_rate=24000):
     return waveform, target_sample_rate
 
 
+import os
+import time
+import numpy as np
+import torch
+import soundfile as sf
+from scipy.signal import resample
+from torchcodec.decoders import AudioDecoder
+import tritonclient.grpc.aio
+from tritonclient.utils import np_to_triton_dtype
+
+
+def load_audio(wav_path, target_sample_rate=24000):
+    """
+    Universal audio loading:
+    - Supports dict with waveform + sample_rate
+    - Supports file path via torchcodec.AudioDecoder
+    - Resamples to target_sample_rate
+    - Returns a Numpy array and sample rate
+    """
+    assert target_sample_rate == 24000, "hard coding in server"
+
+    if isinstance(wav_path, dict):
+        waveform = wav_path["array"]
+        sample_rate = wav_path["sampling_rate"]
+    else:
+        decoder = AudioDecoder(wav_path)
+        waveform = decoder.decode()
+        sample_rate = decoder.sample_rate
+
+        # Convert to numpy for compatibility
+        if isinstance(waveform, torch.Tensor):
+            waveform = waveform.numpy()
+
+    if sample_rate != target_sample_rate:
+        waveform = resample(
+            waveform,
+            int(len(waveform) * (target_sample_rate / sample_rate))
+        )
+
+    return waveform, target_sample_rate
+
+
 async def send(
     manifest_item_list: list,
     name: str,
     triton_client: tritonclient.grpc.aio.InferenceServerClient,
-    protocol_client: types.ModuleType,
+    protocol_client: torch.types.ModuleType,
     log_interval: int,
     model_name: str,
     padding_duration: int = None,
     audio_save_dir: str = "./",
     save_sample_rate: int = 24000,
 ):
+    """
+    Asynchronously send audio and text to Triton,
+    save the result, and collect latency statistics.
+    """
     total_duration = 0.0
     latency_data = []
     task_id = int(name[5:])
@@ -247,6 +293,7 @@ async def send(
     for i, item in enumerate(manifest_item_list):
         if i % log_interval == 0:
             print(f"{name}: {i}/{len(manifest_item_list)}")
+
         waveform, sample_rate = load_audio(item["audio_filepath"], target_sample_rate=24000)
         duration = len(waveform) / sample_rate
         lengths = np.array([[len(waveform)]], dtype=np.int32)
@@ -256,7 +303,7 @@ async def send(
         estimated_target_duration = duration / len(reference_text) * len(target_text)
 
         if padding_duration:
-            # padding to nearset 10 seconds
+            # padding to the nearest 10 seconds
             samples = np.zeros(
                 (
                     1,
@@ -266,7 +313,6 @@ async def send(
                 ),
                 dtype=np.float32,
             )
-
             samples[0, : len(waveform)] = waveform
         else:
             samples = waveform
@@ -282,12 +328,10 @@ async def send(
         inputs[0].set_data_from_numpy(samples)
         inputs[1].set_data_from_numpy(lengths)
 
-        input_data_numpy = np.array([reference_text], dtype=object)
-        input_data_numpy = input_data_numpy.reshape((1, 1))
+        input_data_numpy = np.array([reference_text], dtype=object).reshape((1, 1))
         inputs[2].set_data_from_numpy(input_data_numpy)
 
-        input_data_numpy = np.array([target_text], dtype=object)
-        input_data_numpy = input_data_numpy.reshape((1, 1))
+        input_data_numpy = np.array([target_text], dtype=object).reshape((1, 1))
         inputs[3].set_data_from_numpy(input_data_numpy)
 
         outputs = [protocol_client.InferRequestedOutput("waveform")]

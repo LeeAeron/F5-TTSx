@@ -12,6 +12,9 @@ import uvicorn
 if sys.platform.startswith("win"):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning, module="transformers")
+
 import gc
 import json
 import os
@@ -467,7 +470,9 @@ def infer(
         try:
             sf.write(temp_path, final_wave, final_sample_rate)
             remove_silence_for_generated_wav(f.name)
-            final_wave, _ = torchaudio.load(f.name)
+            final_wave, _ = load_audio(f.name, target_sample_rate=final_sample_rate)
+            if not isinstance(final_wave, torch.Tensor):
+                final_wave = torch.from_numpy(final_wave).float()
         finally:
             os.unlink(temp_path)
         final_wave = final_wave.squeeze().cpu().numpy()

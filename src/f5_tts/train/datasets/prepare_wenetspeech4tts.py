@@ -18,6 +18,9 @@ from tqdm import tqdm
 from f5_tts.model.utils import convert_char_to_pinyin
 
 
+import os
+from tqdm import tqdm
+
 def deal_with_sub_path_files(dataset_path, sub_path):
     print(f"Dealing with: {sub_path}")
 
@@ -40,7 +43,7 @@ def deal_with_sub_path_files(dataset_path, sub_path):
         elif tokenizer == "char":
             texts.append(text)
 
-        audio, sample_rate = torchaudio.load(audio_path)
+        audio, sample_rate = load_audio(audio_path, target_sample_rate=24000)
         durations.append(audio.shape[-1] / sample_rate)
 
     return audio_paths, texts, durations
