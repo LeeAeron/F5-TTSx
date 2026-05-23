@@ -82,11 +82,13 @@ This project provided with only *.bat installer/re-installer/starter/updater fil
 - support for the auto-placement of accent marks by RuAccent module for russian language (by RuAccent checkbox in UI, Works for unprepared text in Russian, processing it 'on the fly' during voice synthesis).
 - additional Copy/Paste/Clear buttons for 'Text to synteze' (works with clipboard)
 - separate additional voice generation settings for the dialogue synthesis mode
+- enhanced output file settings with samplerate and normalization
+- enhanced Smart Chunking support with enhanced settings
 
 
 ## 📺 Credits
 
-* [LeeAeron](https://github.com/LeeAeron) — additional code, modding, reworking, repository, Hugginface space, features, installer/launcher, reference audios, dictionary support.
+* [LeeAeron](https://github.com/LeeAeron) — main code, modding, reworking, repository, Hugginface space, features, installer/launcher, reference audios, dictionary support.
 * [mrfakename](https://github.com/fakerybakery) — original [online demo](https://huggingface.co/spaces/mrfakename/E2-F5-TTS)
 * [RootingInLoad](https://github.com/RootingInLoad) — chunk generation & podcast app exploration
 * [jpgallegoar](https://github.com/jpgallegoar) — multiple speech-type generation & voice chat
