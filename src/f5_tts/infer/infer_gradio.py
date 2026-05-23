@@ -3372,268 +3372,380 @@ Have a conversation with an AI using your reference voice!
         chat_tokenizer_state = AutoTokenizer.from_pretrained(chat_model_name)
         show_info(f"Chat model {chat_model_name} loaded successfully!")
 
-        return gr.update(visible=False), gr.update(visible=True)
+        return gr.update(visible=False), gr.update(visible=True), gr.update(visible=True), gr.update(visible=False)
+
+    @gpu_decorator
+    def unload_chat_model():
+        show_info = gr.Info
+        global chat_model_state, chat_tokenizer_state
+        if chat_model_state is not None:
+            chat_model_state = None
+            chat_tokenizer_state = None
+            gc.collect()
+            torch.cuda.empty_cache()
+            show_info("Chat model unloaded successfully!")
+        else:
+            gr.Warning("No chat model is currently loaded.")
+
+        return gr.update(visible=True), gr.update(visible=False), gr.update(visible=False), gr.update(visible=True)
 
     if USING_SPACES:
         load_chat_model(chat_model_name_list[0])
 
-    chat_model_name_input = gr.Dropdown(
-        choices=chat_model_name_list,
-        value=chat_model_name_list[0],
-        label="Chat Model Name",
-        info="Enter the name of a HuggingFace chat model",
-        allow_custom_value=not USING_SPACES,
-    )
-    load_chat_model_btn = gr.Button("Load Chat Model", variant="primary", visible=not USING_SPACES)
-    chat_interface_container = gr.Column(visible=USING_SPACES)
+    with gr.Row():
+        with gr.Column(scale=2, min_width=320):
+            # TTS Model selector for Voice Chat
+            choose_tts_model_chat = gr.Dropdown(
+                choices=[
+                    ("🏠 F5-TTS v1 (EN/ZH)", "F5-TTS_v1"),
+                    ("🇷🇺 Misha24-10 v2", "Misha24-10_v2"),
+                    ("🇷🇺 Misha24-10 v4", "Misha24-10_v4"),
+                    ("🇷🇺️ ESpeech Podcaster", "ESpeech-TTS-1_podcaster"),
+                    ("🇷🇺 ESpeech RL-V1", "ESpeech-TTS-1_RL-V1"),
+                    ("🇷🇺 ESpeech RL-V2", "ESpeech-TTS-1_RL-V2"),
+                    ("🇷🇺 ESpeech SFT-95K", "ESpeech-TTS-1_SFT-95K"),
+                    ("🇷🇺 ESpeech SFT-256K", "ESpeech-TTS-1_SFT-256K"),
+                    ("⚙️ Custom", "Custom"),
+                ],
+                label="TTS Model",
+                value="F5-TTS_v1",
+            )
 
-    chat_model_name_input.change(
-        lambda: gr.update(visible=True),
-        None,
-        load_chat_model_btn,
-        show_progress="hidden",
-    )
-    load_chat_model_btn.click(
-        load_chat_model, inputs=[chat_model_name_input], outputs=[load_chat_model_btn, chat_interface_container]
-    )
+            # Custom model fields for Voice Chat (hidden by default)
+            custom_ckpt_path_chat = gr.Dropdown(
+                choices=[DEFAULT_TTS_MODEL_CFG[0]],
+                value=DEFAULT_TTS_MODEL_CFG[0],
+                allow_custom_value=True,
+                label="Model path",
+                visible=False,
+            )
+            custom_vocab_path_chat = gr.Dropdown(
+                choices=[DEFAULT_TTS_MODEL_CFG[1]],
+                value=DEFAULT_TTS_MODEL_CFG[1],
+                allow_custom_value=True,
+                label="Vocab path",
+                visible=False,
+            )
+            custom_model_cfg_chat = gr.Dropdown(
+                choices=[DEFAULT_TTS_MODEL_CFG[2]],
+                value=DEFAULT_TTS_MODEL_CFG[2],
+                allow_custom_value=True,
+                label="Model config",
+                visible=False,
+            )
 
-    with chat_interface_container:
-        with gr.Row():
-            with gr.Column():
-                voice_selector = gr.Dropdown(
-                    choices=get_voice_choices(),
-                    label="Voice",
-                    value="-NONE-",
-                )
-                # Update btn
-                refresh_btn = gr.Button("🔄 Refresh list", elem_classes="btn-gray", scale=1)
-                ref_audio_chat = gr.Audio(label="Reference Audio", type="filepath")
-                with gr.Accordion("Reference Text", open=False):
-                    ref_text_chat = gr.Textbox(
-                        label="Reference Text",
-                        info="Optional: Leave blank to auto-transcribe",
-                        lines=2,
-                        scale=3,
-                    )
-                    ref_text_file_chat = gr.File(
-                        label="Load Reference Text from File (.txt)", file_types=[".txt"], scale=1
-                    )
-   
-            with gr.Column():
-                with gr.Accordion("Advanced Settings", open=False):
-                    
-                    with gr.Row():
-                        randomize_seed_chat = gr.Checkbox(
-                            label="Randomize Seed",
-                            value=True,
-                            info="Uncheck to use the seed specified.",
-                            scale=3,
-                        )
-                        seed_input_chat = gr.Number(show_label=False, value=0, precision=0, scale=1)
-                    remove_silence_chat = gr.Checkbox(
-                        label="Remove Silences",
-                        value=False,
-                    )
+            # Whisper ASR Model selector for Voice Chat
+            choose_asr_model_chat = gr.Dropdown(
+                choices=[
+                    "openai/whisper-tiny",
+                    "openai/whisper-base",
+                    "openai/whisper-small",
+                    "openai/whisper-medium",
+                    "openai/whisper-large-v3-turbo"
+                ],
+                label="Whisper ASR Model",
+                value=load_last_used_asr(),
+            )
 
+            # Chat Model Name
+            chat_model_name_input = gr.Dropdown(
+                choices=chat_model_name_list,
+                value=chat_model_name_list[0],
+                label="Chat Model Name",
+                info="Enter the name of a HuggingFace chat model",
+                allow_custom_value=not USING_SPACES,
+            )
+
+            # Load / Unload buttons row
+            with gr.Row():
+                load_chat_model_btn = gr.Button("Load Chat Model", variant="primary", visible=not USING_SPACES, scale=3)
+                unload_chat_model_btn = gr.Button("Unload Chat Model", variant="stop", elem_classes="btn-restart", visible=False, scale=2)
+
+            chat_interface_container = gr.Column(visible=USING_SPACES)
+
+            # TTS Model switch handler for Voice Chat
+            choose_tts_model_chat.change(
+                switch_tts_model,
+                inputs=[choose_tts_model_chat],
+                outputs=[custom_ckpt_path_chat, custom_vocab_path_chat, custom_model_cfg_chat, gr.State()],
+                show_progress="hidden",
+            )
+
+            # Custom model fields handlers for Voice Chat
+            custom_ckpt_path_chat.change(
+                set_custom_model,
+                inputs=[custom_ckpt_path_chat, custom_vocab_path_chat, custom_model_cfg_chat],
+                show_progress="hidden",
+            )
+            custom_vocab_path_chat.change(
+                set_custom_model,
+                inputs=[custom_ckpt_path_chat, custom_vocab_path_chat, custom_model_cfg_chat],
+                show_progress="hidden",
+            )
+            custom_model_cfg_chat.change(
+                set_custom_model,
+                inputs=[custom_ckpt_path_chat, custom_vocab_path_chat, custom_model_cfg_chat],
+                show_progress="hidden",
+            )
+
+            # ASR handler for Voice Chat
+            choose_asr_model_chat.change(
+                set_asr_model,
+                inputs=[choose_asr_model_chat],
+                outputs=[],
+                show_progress="hidden",
+            )
+
+            chat_model_name_input.change(
+                lambda: gr.update(visible=True),
+                None,
+                load_chat_model_btn,
+                show_progress="hidden",
+            )
+            load_chat_model_btn.click(
+                load_chat_model, inputs=[chat_model_name_input], outputs=[load_chat_model_btn, chat_interface_container, unload_chat_model_btn, chat_model_name_input]
+            )
+            unload_chat_model_btn.click(
+                unload_chat_model, inputs=None, outputs=[load_chat_model_btn, chat_interface_container, unload_chat_model_btn, chat_model_name_input]
+            )
+
+            with chat_interface_container:
+                with gr.Row():
                     with gr.Column():
-                        speed_slider_chat = gr.Slider(
-                            label="Speed",
-                            minimum=0.3,
-                            maximum=2.0,
-                            value=1.0,
-                            step=0.1,
-                            info="Adjust the speed of the audio.",
+                        voice_selector = gr.Dropdown(
+                            choices=get_voice_choices(),
+                            label="Voice",
+                            value="-NONE-",
                         )
-                        nfe_slider_chat = gr.Slider(
-                            label="NFE Steps",
-                            minimum=4,
-                            maximum=64,
-                            value=16,
-                            step=2,
-                            info="Set the number of denoising steps. Less steps - faster, but worse quality.",
-                        )
-                        crossfade_slider_chat = gr.Slider(
-                            label="Cross-Fade Duration (seconds)",
-                            minimum=0.0,
-                            maximum=1.0,
-                            value=0.50,
-                            step=0.01,
-                            info="Set the duration of the cross-fade between audio clips.",
-                        )
-                        cfg_strength_chat = gr.Slider(
-                            label="CFG Strength",
-                            minimum=0.1,
-                            maximum=5.0,
-                            value=2.0,
-                            step=0.1,
-                            info="Classifier-Free Guidance strength.",
-                        )
-                        use_accent_chat = gr.Checkbox(
-                            label="RuAccent",
-                            info="Automatic RuAccent pre-processing for Russian language pronounce.",
-                            value=False,
-                        )
+                        # Update btn
+                        refresh_btn = gr.Button("🔄 Refresh list", elem_classes="btn-gray", scale=1)
+                        ref_audio_chat = gr.Audio(label="Reference Audio", type="filepath")
+                        with gr.Accordion("Reference Text", open=False):
+                            ref_text_chat = gr.Textbox(
+                                label="Reference Text",
+                                info="Optional: Leave blank to auto-transcribe",
+                                lines=2,
+                                scale=3,
+                            )
+                            ref_text_file_chat = gr.File(
+                                label="Load Reference Text from File (.txt)", file_types=[".txt"], scale=1
+                            )
+   
+                    with gr.Column():
+                        with gr.Accordion("Advanced Settings", open=False):
+                    
+                            with gr.Row():
+                                randomize_seed_chat = gr.Checkbox(
+                                    label="Randomize Seed",
+                                    value=True,
+                                    info="Uncheck to use the seed specified.",
+                                    scale=3,
+                                )
+                                seed_input_chat = gr.Number(show_label=False, value=0, precision=0, scale=1)
+                            remove_silence_chat = gr.Checkbox(
+                                label="Remove Silences",
+                                value=False,
+                            )
 
-                    system_prompt_chat = gr.Textbox(
-                        label="System Prompt",
-                        value="You are not an AI assistant, you are whoever the user says you are. You must stay in character. Keep your responses concise since they will be spoken out loud.",
-                        lines=2,
+                            with gr.Column():
+                                speed_slider_chat = gr.Slider(
+                                    label="Speed",
+                                    minimum=0.3,
+                                    maximum=2.0,
+                                    value=1.0,
+                                    step=0.1,
+                                    info="Adjust the speed of the audio.",
+                                )
+                                nfe_slider_chat = gr.Slider(
+                                    label="NFE Steps",
+                                    minimum=4,
+                                    maximum=64,
+                                    value=16,
+                                    step=2,
+                                    info="Set the number of denoising steps. Less steps - faster, but worse quality.",
+                                )
+                                crossfade_slider_chat = gr.Slider(
+                                    label="Cross-Fade Duration (seconds)",
+                                    minimum=0.0,
+                                    maximum=1.0,
+                                    value=0.50,
+                                    step=0.01,
+                                    info="Set the duration of the cross-fade between audio clips.",
+                                )
+                                cfg_strength_chat = gr.Slider(
+                                    label="CFG Strength",
+                                    minimum=0.1,
+                                    maximum=5.0,
+                                    value=2.0,
+                                    step=0.1,
+                                    info="Classifier-Free Guidance strength.",
+                                )
+                                use_accent_chat = gr.Checkbox(
+                                    label="RuAccent",
+                                    info="Automatic RuAccent pre-processing for Russian language pronounce.",
+                                    value=False,
+                                )
+
+                            system_prompt_chat = gr.Textbox(
+                                label="System Prompt",
+                                value="You are not an AI assistant, you are whoever the user says you are. You must stay in character. Keep your responses concise since they will be spoken out loud.",
+                                lines=2,
+                            )
+                refresh_btn.click(
+                    refresh_voices,
+                    inputs=None,
+                    outputs=voice_selector,
+                )
+
+                # File clearing and installation logic - after all components are declared
+                voice_selector.change(
+                    lambda: (None, ""),
+                    inputs=None,
+                    outputs=[ref_audio_chat, ref_text_chat],
+                ).then(
+                    set_voice_file,
+                    inputs=[voice_selector],
+                    outputs=[ref_audio_chat],
+                )
+
+            chatbot_interface = gr.Chatbot(
+                label="Conversation"
+            )  # type="messages" hard-coded and no need to pass in since gradio 6.0
+
+            with gr.Row():
+                with gr.Column():
+                    audio_input_chat = gr.Microphone(
+                        label="Speak your message",
+                        type="filepath",
                     )
-            refresh_btn.click(
-                refresh_voices,
-                inputs=None,
-                outputs=voice_selector,
-            )
+                    audio_output_chat = gr.Audio(autoplay=True)
+                with gr.Column():
+                    text_input_chat = gr.Textbox(
+                        label="Type your message",
+                        lines=1,
+                    )
+                    send_btn_chat = gr.Button("Send Message")
+                    clear_btn_chat = gr.Button("Clear Conversation")
 
-            # File clearing and installation logic - after all components are declared
-            voice_selector.change(
-                lambda: (None, ""),
-                inputs=None,
-                outputs=[ref_audio_chat, ref_text_chat],
-            ).then(
-                set_voice_file,
-                inputs=[voice_selector],
-                outputs=[ref_audio_chat],
-            )
+            # Modify process_audio_input to generate user input
+            @gpu_decorator
+            def process_audio_input(conv_state, audio_path, text):
+                """Handle audio or text input from user"""
 
-        chatbot_interface = gr.Chatbot(
-            label="Conversation"
-        )  # type="messages" hard-coded and no need to pass in since gradio 6.0
+                if not audio_path and not text.strip():
+                    return conv_state
 
-        with gr.Row():
-            with gr.Column():
-                audio_input_chat = gr.Microphone(
-                    label="Speak your message",
-                    type="filepath",
-                )
-                audio_output_chat = gr.Audio(autoplay=True)
-            with gr.Column():
-                text_input_chat = gr.Textbox(
-                    label="Type your message",
-                    lines=1,
-                )
-                send_btn_chat = gr.Button("Send Message")
-                clear_btn_chat = gr.Button("Clear Conversation")
+                if audio_path:
+                    text = preprocess_ref_audio_text(audio_path, text)[1]
+                if not text.strip():
+                    return conv_state
 
-        # Modify process_audio_input to generate user input
-        @gpu_decorator
-        def process_audio_input(conv_state, audio_path, text):
-            """Handle audio or text input from user"""
-
-            if not audio_path and not text.strip():
+                conv_state.append({"role": "user", "content": text})
                 return conv_state
 
-            if audio_path:
-                text = preprocess_ref_audio_text(audio_path, text)[1]
-            if not text.strip():
+            # Use model and tokenizer from state to get text response
+            @gpu_decorator
+            def generate_text_response(conv_state, system_prompt):
+                """Generate text response from AI"""
+                for single_state in conv_state:
+                    if isinstance(single_state["content"], list):
+                        assert len(single_state["content"]) == 1 and single_state["content"][0]["type"] == "text"
+                        single_state["content"] = single_state["content"][0]["text"]
+
+                system_prompt_state = [{"role": "system", "content": system_prompt}]
+                response = chat_model_inference(system_prompt_state + conv_state, chat_model_state, chat_tokenizer_state)
+
+                conv_state.append({"role": "assistant", "content": response})
                 return conv_state
 
-            conv_state.append({"role": "user", "content": text})
-            return conv_state
-
-        # Use model and tokenizer from state to get text response
-        @gpu_decorator
-        def generate_text_response(conv_state, system_prompt):
-            """Generate text response from AI"""
-            for single_state in conv_state:
-                if isinstance(single_state["content"], list):
-                    assert len(single_state["content"]) == 1 and single_state["content"][0]["type"] == "text"
-                    single_state["content"] = single_state["content"][0]["text"]
-
-            system_prompt_state = [{"role": "system", "content": system_prompt}]
-            response = chat_model_inference(system_prompt_state + conv_state, chat_model_state, chat_tokenizer_state)
-
-            conv_state.append({"role": "assistant", "content": response})
-            return conv_state
-
-        @gpu_decorator
-        def generate_audio_response(
-            conv_state,
-            ref_audio,
-            ref_text,
-            remove_silence,
-            randomize_seed,
-            seed_input,
-            speed,
-            crossfade,
-            cfg_strength,
-            nfe_steps,
-            use_accent,
-        ):
-            """Generate TTS audio for AI response"""
-            if not conv_state or not ref_audio:
-                return None, ref_text, seed_input
-
-            last_ai_response = conv_state[-1]["content"][0]["text"]
-            if not last_ai_response or conv_state[-1]["role"] != "assistant":
-                return None, ref_text, seed_input
-
-            if randomize_seed:
-                seed_input = np.random.randint(0, 2**31 - 1)
-
-            audio_result, _, ref_text_out, used_seed = infer(
+            @gpu_decorator
+            def generate_audio_response(
+                conv_state,
                 ref_audio,
                 ref_text,
-                last_ai_response,
-                tts_model_choice,
                 remove_silence,
-                seed=seed_input,
-                cross_fade_duration=crossfade,
-                nfe_step=nfe_steps,
-                speed=speed,
-                use_accent=use_accent,
-                cfg_strength=cfg_strength,
-            )
-            return audio_result, ref_text_out, used_seed
+                randomize_seed,
+                seed_input,
+                speed,
+                crossfade,
+                cfg_strength,
+                nfe_steps,
+                use_accent,
+            ):
+                """Generate TTS audio for AI response"""
+                if not conv_state or not ref_audio:
+                    return None, ref_text, seed_input
+
+                last_ai_response = conv_state[-1]["content"][0]["text"]
+                if not last_ai_response or conv_state[-1]["role"] != "assistant":
+                    return None, ref_text, seed_input
+
+                if randomize_seed:
+                    seed_input = np.random.randint(0, 2**31 - 1)
+
+                audio_result, _, ref_text_out, used_seed = infer(
+                    ref_audio,
+                    ref_text,
+                    last_ai_response,
+                    tts_model_choice,
+                    remove_silence,
+                    seed=seed_input,
+                    cross_fade_duration=crossfade,
+                    nfe_step=nfe_steps,
+                    speed=speed,
+                    use_accent=use_accent,
+                    cfg_strength=cfg_strength,
+                )
+                return audio_result, ref_text_out, used_seed
 
 
-        def clear_conversation():
-            """Reset the conversation"""
-            return [], None
+            def clear_conversation():
+                """Reset the conversation"""
+                return [], None
 
-        ref_text_file_chat.upload(
-            load_text_from_file,
-            inputs=[ref_text_file_chat],
-            outputs=[ref_text_chat],
-        )
-
-        for user_operation in [audio_input_chat.stop_recording, text_input_chat.submit, send_btn_chat.click]:
-            user_operation(
-                process_audio_input,
-                inputs=[chatbot_interface, audio_input_chat, text_input_chat],
-                outputs=[chatbot_interface],
-            ).then(
-                generate_text_response,
-                inputs=[chatbot_interface, system_prompt_chat],
-                outputs=[chatbot_interface],
-            ).then(
-                generate_audio_response,
-                inputs=[
-                    chatbot_interface,
-                    ref_audio_chat,
-                    ref_text_chat,
-                    remove_silence_chat,
-                    randomize_seed_chat,
-                    seed_input_chat,
-                    speed_slider_chat,
-                    crossfade_slider_chat,
-                    cfg_strength_chat,
-                    nfe_slider_chat,
-                    use_accent_chat,
-                ],
-                outputs=[audio_output_chat, ref_text_chat, seed_input_chat],
-            ).then(
-                lambda: [None, None],
-                None,
-                [audio_input_chat, text_input_chat],
+            ref_text_file_chat.upload(
+                load_text_from_file,
+                inputs=[ref_text_file_chat],
+                outputs=[ref_text_chat],
             )
 
-        # Handle clear button or system prompt change and reset conversation
-        for user_operation in [clear_btn_chat.click, system_prompt_chat.change, chatbot_interface.clear]:
-            user_operation(
-                clear_conversation,
-                outputs=[chatbot_interface, audio_output_chat],
-            )
+            for user_operation in [audio_input_chat.stop_recording, text_input_chat.submit, send_btn_chat.click]:
+                user_operation(
+                    process_audio_input,
+                    inputs=[chatbot_interface, audio_input_chat, text_input_chat],
+                    outputs=[chatbot_interface],
+                ).then(
+                    generate_text_response,
+                    inputs=[chatbot_interface, system_prompt_chat],
+                    outputs=[chatbot_interface],
+                ).then(
+                    generate_audio_response,
+                    inputs=[
+                        chatbot_interface,
+                        ref_audio_chat,
+                        ref_text_chat,
+                        remove_silence_chat,
+                        randomize_seed_chat,
+                        seed_input_chat,
+                        speed_slider_chat,
+                        crossfade_slider_chat,
+                        cfg_strength_chat,
+                        nfe_slider_chat,
+                        use_accent_chat,
+                    ],
+                    outputs=[audio_output_chat, ref_text_chat, seed_input_chat],
+                ).then(
+                    lambda: [None, None],
+                    None,
+                    [audio_input_chat, text_input_chat],
+                )
+
+            # Handle clear button or system prompt change and reset conversation
+            for user_operation in [clear_btn_chat.click, system_prompt_chat.change, chatbot_interface.clear]:
+                user_operation(
+                    clear_conversation,
+                    outputs=[chatbot_interface, audio_output_chat],
+                )
 
 
 with gr.Blocks() as app_additional:
