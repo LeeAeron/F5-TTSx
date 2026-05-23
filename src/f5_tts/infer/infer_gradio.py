@@ -2427,7 +2427,7 @@ with gr.Blocks() as app_multistyle:
             # Model & ASR
             choose_tts_model_multistyle = gr.Dropdown(
                 choices=[
-                    ("🏠 F5-TTS v1 (Official)", "F5-TTS_v1"),
+                    ("🏠 F5-TTS v1 (EN/ZH)", "F5-TTS_v1"),
                     ("🇷🇺 Misha24-10 v2", "Misha24-10_v2"),
                     ("🇷🇺 Misha24-10 v4", "Misha24-10_v4"),
                     ("🇷🇺 ESpeech Podcaster", "ESpeech-TTS-1_podcaster"),
